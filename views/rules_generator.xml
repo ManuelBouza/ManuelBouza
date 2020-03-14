@@ -1,7 +1,7 @@
 <openerp>
     <data>
 
-        <record id="rules_generator_form_view" model="ir.ui.view">
+        <record id="rule_generator_form_view" model="ir.ui.view">
             <field name="name">rules.generator.form.view</field>
             <field name="model">rules.generator</field>
             <field name="arch" type="xml">
@@ -29,7 +29,7 @@
                             </group>
 
                             <group string="Reglas">
-                                <field name="rules"
+                                <field name="rule"
                                        options='{"no_open": True, "no_create": True}'
                                        nolabel="1">
                                     <tree editable="1" create="0" delete="1">

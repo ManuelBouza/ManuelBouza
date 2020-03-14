@@ -2,9 +2,9 @@
 from openerp import models, fields, api
 
 
-class TransientSelection(models.TransientModel):
-    _name = 'transient.selection'
-    _description = 'Transient Selection'
+class Many2mayValue(models.Model):
+    _name = 'many2many.value'
+    _description = 'Many2many Value'
 
     name = fields.Char(
         string='Nombre',
@@ -15,7 +15,28 @@ class TransientSelection(models.TransientModel):
         required=False,
     )
 
-    key_id = fields.Char(
-        string='Key_id',
+class Many2oneValue(models.Model):
+    _name = 'many2one.value'
+    _description = 'Many2one Value'
+
+    name = fields.Char(
+        string='Nombre',
+    )
+
+    model_id = fields.Integer(
+        string='Model_id',
         required=False,
     )
+
+class SelectionValue(models.Model):
+    _name = 'selection.value'
+    _description = 'Many2one Value'
+
+    key_id = fields.Char(
+        string='Nombre',
+    )
+
+    name = fields.Char(
+        string='Nombre',
+    )
+
