@@ -7,17 +7,13 @@
 
                 <form string="Regla">
                     <group string="Comparaciones">
-
                         <field name="rule_field"
                                string="Campo"
                                widget="selection"
-                               domain="[('model_id', '=', context.get('rule_model_id', False))]"
+                               domain="[('model_id', '=', context.get('rule_model_id',False))]"
                         />
 
                         <field name="fields_type"/>
-                        <field name="rules_generator_id"
-                               invisible="1"
-                        />
 
                         <field name="logical_operator"
                                string="Operador Lógico"
@@ -48,26 +44,11 @@
                                attrs="{'invisible': [('fields_type', 'not in', ['float', 'monetary'])]}"
                         />
                         <field name="many2many_value"
-                               string="Many2many Value"
+                               string="Relacional"
                                options="{'no_create': True}"
                                widget="many2many_tags"
-                               attrs="{'invisible': [('fields_type', 'not in', ['many2many'])]}"
+                               attrs="{'invisible': [('fields_type', 'not in', ['many2many', 'many2one','selection'])]}"
                         />
-
-                        <field name="many2one_value"
-                               string="Many2one Value"
-                               options="{'no_create': True}"
-                               widget="selection"
-                               attrs="{'invisible': [('fields_type', 'not in', ['many2one'])]}"
-                        />
-
-                        <field name="selection_value"
-                               string="Selection Value"
-                               options="{'no_create': True}"
-                               widget="selection"
-                               attrs="{'invisible': [('fields_type', 'not in', ['selection'])]}"
-                        />
-
 
                     </group>
                     <footer>
