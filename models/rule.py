@@ -20,9 +20,9 @@ class Rule(models.Model):
         required=False,
     )
 
-    rule_generator_id = fields.Many2one(
+    rules_generator_id = fields.Many2one(
         comodel_name='rules.generator',
-        string='rules Generator id',
+        string='Rules Generator',
         required=True,
         ondelete='cascade',
     )
@@ -32,6 +32,9 @@ class Rule(models.Model):
         store=True,
     )
 
+    ####################
+    # Tree value Shown #
+    ####################
     rule_field = fields.Many2one(
         comodel_name='ir.model.fields',
         string='Rule_field',
@@ -41,14 +44,17 @@ class Rule(models.Model):
     logical_operator = fields.Many2one(
         comodel_name='logical.operators',
         string='logical_operator',
-        required=True
+        required=True,
     )
 
-    selected_value = fields.Char(
-        string=' selected_value',
+    shown_value = fields.Char(
+        string=' shown_value',
         required=False,
     )
 
+    ##############
+    # Data Types #
+    ##############
     date_value = fields.Date(
         string='Date',
         required=False,
@@ -79,10 +85,19 @@ class Rule(models.Model):
         required=False,
     )
 
-    # este campo es para los many2one, many2many y selection
-    many2many_value = fields.Many2many(
-        comodel_name='transient.selection',
-        string='Many2many_value',
+    many2many_values = fields.Many2many(
+        comodel_name='many2many.values',
+        string='Relational_value',
+    )
+
+    many2one_values = fields.Many2one(
+        comodel_name='many2one.values',
+        string='Many2One_values',
+    )
+
+    selection_values = fields.Many2one(
+        comodel_name='selection.values',
+        string='Selection_values',
     )
 
     @api.depends('rule_field')
@@ -90,74 +105,21 @@ class Rule(models.Model):
         if self.rule_field:
             self.fields_type = self.rule_field.ttype
 
-    @api.onchange('rule_field')
-    def onchange_method(self):
 
-        if self.fields_type:
-            self.fields_type = self.rule_field.ttype
-
-            if self.fields_type in ['selection', 'many2many', 'many2one']:
-
-                self.many2many_value = False
-
-                transient_ids = []
-
-                if self.fields_type == 'selection':
-                    rule_model = self.rule_model.model
-                    rule_field = self.rule_field.name
-
-                    if not self.rule_field.related:
-                        selection_values = self.env[rule_model]._fields[rule_field].selection
-                    else:
-
-                        related = self.rule_field.related.split('.')
-                        model_related = related[0]
-                        field_related = related[1]
-
-                        model_related = self.env[rule_model]._fields[model_related]
-                        selection_values = self.env[model_related.comodel_name]._fields[field_related].selection
-
-                    for value in selection_values:
-                        key_id = value[0]
-                        name = value[1]
-
-                        transient = self.env['transient.selection'].create(
-                            {
-                                'name': name,
-                                'key_id': key_id,
-                            }
-                        )
-
-                    transient_ids.append(transient.id)
-                else:  # 'many2many', 'many2one'
-
-                    rule_model = self.rule_field.relation  # esto es el modelo
-                    records = self.env[rule_model].search([])
-
-                    for record in records:
-                        transient = self.env['transient.selection'].create(
-                            {
-                                'name': record.name,
-                                'model_id': record.id,
-                            }
-                        )
-
-                        transient_ids.append(transient.id)
-
-                return {'domain': {'many2many_value': [('id', 'in', transient_ids)]}}
 
     @api.multi
     def edit(self):
 
         context = {
-            'default_name': self.name,
-            'default_rule_generator_id': self.rule_generator_id.id,
-            'default_rule_model': self.env.context.get('rule_model_id', False),
+            'default_rules_generator_id': self.rules_generator_id.id,
+            'default_rule_model': self.rules_generator_id.rule_model.id,
             'default_rule_field': self.rule_field.id,
             'default_logical_operator': self.logical_operator.id,
             'edit': True,
             'rule_id': self.id,
         }
+
+        domain = {}
 
         if self.fields_type == 'date':
             context['default_date_value'] = self.date_value
@@ -177,8 +139,21 @@ class Rule(models.Model):
         elif self.fields_type in ['float', 'monetary']:
             context['default_float_value'] = self.float_value
 
-        elif self.fields_type in ['many2many', 'many2one', 'selection']:
-            pass
+        elif self.fields_type in ['many2many']:
+
+            ######################## Debug ##########################################################
+            import sys
+            sys.path.append("/usr/lib/python2.7/debug/pydevd-pycharm.egg")
+            import pydevd_pycharm
+            pydevd_pycharm.settrace('10.0.75.1', port=4020, stdoutToServer=True, stderrToServer=True)
+            ######################## Debug ##########################################################
+
+            ids_to_rel = self.many2one_values.ids
+            context['default_many2one_values'] = [(6, 0, ids_to_rel)]
+
+
+        # elif self.fields_type in ['many2many', 'many2one', 'selection']:
+        #     context['default_selection_values'] = self.selection_values.id
 
         return {
             'view_type': 'form',
@@ -189,57 +164,4 @@ class Rule(models.Model):
             'context': context,
         }
 
-    @api.multi
-    def create_rule(self):
 
-        rule_model_id = self.env.context.get('rule_model_id', False)
-
-        rule = {
-            'generator_id': self.rule_generator_id,
-            'rule_model': rule_model_id,
-            'rule_field': self.rule_field.id,
-            'logical_operator': self.logical_operator.id,
-            'fields_type': self.fields_type,
-        }
-
-        fields_type = self.fields_type
-
-        if fields_type == 'date':
-            rule['date_value'] = self.date_value
-            rule['selected_value'] = self.date_value
-
-        elif fields_type == 'datetime':
-            rule['datetime'] = self.date_time_value
-            rule['selected_value'] = self.date_time_value
-
-        elif fields_type == 'integer':
-            rule['integer_value'] = str(self.integer_value)
-            rule['selected_value'] = str(self.integer_value)
-
-        elif fields_type == 'boolean':
-            rule['bool_value'] = self.bool_value
-            rule['selected_value'] = "Verdadero" if self.bool_value else "Falso"
-
-        elif fields_type == 'char':
-            rule['char_value'] = self.char_value
-            rule['selected_value'] = self.char_value
-
-        elif fields_type in ['float', 'monetary']:
-            rule['float_value'] = str(self.float_value)
-            rule['selected_value'] = str(self.float_value)
-
-        elif fields_type in [' many2many', 'many2one', 'selection']:
-            rule['many2many_value'] = str(self.many2many_value)
-            rule['selected_value'] = self.many2many_value.name
-
-        else:
-            return False
-        # programar error
-
-        if self.env.context.get('create', False):
-            self.env['rule'].create(rule)
-
-        if self.env.context.get('edit', False):
-            self.env['rule'].browse(
-                self.env.context.get('rule_id', False)
-            ).write(rule)

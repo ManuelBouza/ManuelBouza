@@ -19,7 +19,7 @@ class RulesGenerator(models.Model):
     rule_model = fields.Many2one(
         comodel_name='ir.model',
         string='Rule_model',
-        required=True
+        required=True,
     )
 
     fields_show_result = fields.Many2many(
@@ -27,9 +27,24 @@ class RulesGenerator(models.Model):
         string='Campos a Mostrar en Resultado',
     )
 
-    rules = fields.One2many(
+    rule = fields.One2many(
         comodel_name='rule',
-        inverse_name='rule_generator_id',
+        inverse_name='rules_generator_id',
         string='Reglas',
         required=False,
     )
+
+    @api.multi
+    def add_rule(self):
+        return {
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'rule.wizard',
+            'type': 'ir.actions.act_window',
+            'target': 'new',
+            'context': {
+                'default_rules_generator_id': self.id,
+                'rule_model_id': self.rule_model.id,
+                'create': True,
+            },
+        }

@@ -5,4 +5,5 @@ from . import \
     rules_generator, \
     rule, \
     rule_wizard, \
-    transient_selection
+    transient_selection, \
+    operators

@@ -2,9 +2,9 @@
 from openerp import models, fields, api
 
 
-class TransientSelection(models.TransientModel):
-    _name = 'transient.selection'
-    _description = 'Transient Selection'
+class RelationalValues(models.Model):
+    _name = 'relational.values'
+    _description = 'Relational Values'
 
     name = fields.Char(
         string='Nombre',
@@ -15,7 +15,15 @@ class TransientSelection(models.TransientModel):
         required=False,
     )
 
+
+class SelectionValues(models.Model):
+    _name = 'selection.values'
+    _description = 'Selection Values'
+
     key_id = fields.Char(
-        string='Key_id',
-        required=False,
+        string='Nombre',
+    )
+
+    name = fields.Char(
+        string='Nombre',
     )
