@@ -85,30 +85,27 @@ class Rule(models.Model):
         required=False,
     )
 
-    many2many_values = fields.Many2many(
-        comodel_name='many2many.values',
+    ###########################
+    # Data Types Relational id#
+    ###########################
+    many2many_selected_id = fields.Integer(
         string='Relational_value',
+        required=False,
     )
 
-    many2one_values = fields.Many2one(
-        comodel_name='many2one.values',
+    many2one_selected_id = fields.Integer(
         string='Many2One_values',
+        required=False,
     )
 
-    selection_values = fields.Many2one(
-        comodel_name='selection.values',
+    selection_selected_id = fields.Integer(
         string='Selection_values',
+        required=False,
     )
-
-    @api.depends('rule_field')
-    def _compute_fields_type(self):
-        if self.rule_field:
-            self.fields_type = self.rule_field.ttype
-
-
 
     @api.multi
     def edit(self):
+
 
         context = {
             'default_rules_generator_id': self.rules_generator_id.id,
@@ -125,6 +122,8 @@ class Rule(models.Model):
             context['default_date_value'] = self.date_value
 
         elif self.fields_type == 'datetime':
+
+
             context['default_date_time_value'] = self.date_time_value
 
         elif self.fields_type == 'integer':
@@ -140,20 +139,13 @@ class Rule(models.Model):
             context['default_float_value'] = self.float_value
 
         elif self.fields_type in ['many2many']:
+            context['default_many2many_selected_id'] = self.many2many_selected_id
 
-            ######################## Debug ##########################################################
-            import sys
-            sys.path.append("/usr/lib/python2.7/debug/pydevd-pycharm.egg")
-            import pydevd_pycharm
-            pydevd_pycharm.settrace('10.0.75.1', port=4020, stdoutToServer=True, stderrToServer=True)
-            ######################## Debug ##########################################################
+        elif self.fields_type in ['many2one']:
+            context['default_many2one_selected_id'] = self.many2one_selected_id
 
-            ids_to_rel = self.many2one_values.ids
-            context['default_many2one_values'] = [(6, 0, ids_to_rel)]
-
-
-        # elif self.fields_type in ['many2many', 'many2one', 'selection']:
-        #     context['default_selection_values'] = self.selection_values.id
+        elif self.fields_type in ['selection']:
+            context['default_selection_selected_id'] = self.selection_selected_id
 
         return {
             'view_type': 'form',
@@ -163,5 +155,3 @@ class Rule(models.Model):
             'target': 'new',
             'context': context,
         }
-
-

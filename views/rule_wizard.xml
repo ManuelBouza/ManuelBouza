@@ -18,6 +18,15 @@
                         <field name="rules_generator_id"
                                invisible="1"
                         />
+                        <field name="many2many_selected_id"
+                               invisible="1"
+                        />
+                        <field name="many2one_selected_id"
+                               invisible="1"
+                        />
+                        <field name="selection_selected_id"
+                               invisible="1"
+                        />
 
                         <field name="logical_operator"
                                string="Operador Lógico"
@@ -51,13 +60,14 @@
                         <field name="many2many_values"
                                string="Many2many Value"
                                options="{'no_create': True}"
-                               widget="many2many_tags"
+                               widget="selection"
                                attrs="{'invisible': [('fields_type', 'not in', ['many2many'])]}"
                         />
 
                         <field name="many2one_values"
                                string="Many2one Value"
                                options="{'no_create': True}"
+                               widget="selection"
                                attrs="{'invisible': [('fields_type', 'not in', ['many2one'])]}"
                         />
 

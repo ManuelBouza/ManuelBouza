@@ -7,91 +7,138 @@ class ruleWizard(models.TransientModel):
     _description = 'rule Wizard'
     _inherit = 'rule'
 
+    #########################
+    # Data Types Relational #
+    #########################
+    many2many_values = fields.Many2one(
+        comodel_name='relational.values',
+        string='Relational_value',
+    )
+
+    many2one_values = fields.Many2one(
+        comodel_name='relational.values',
+        string='Many2One_values',
+    )
+
+    selection_values = fields.Many2one(
+        comodel_name='selection.values',
+        string='Selection_values',
+    )
+
+    @api.depends('rule_field')
+    def _compute_fields_type(self):
+        if self.rule_field:
+            self.fields_type = self.rule_field.ttype
+
     @api.onchange('rule_field')
     def onchange_method(self):
 
-        if not self.env.context.get('edit', False):
+        #TODO resetear todos los valores si se cambia de opcion.
 
-            if self.fields_type in ['many2many']:
+        if self.fields_type in ['many2many']:
 
-                ######################## Debug ##########################################################
-                import sys
-                sys.path.append("/usr/lib/python2.7/debug/pydevd-pycharm.egg")
-                import pydevd_pycharm
-                pydevd_pycharm.settrace('10.0.75.1', port=4020, stdoutToServer=True, stderrToServer=True)
-                ######################## Debug ##########################################################
+            transient_ids = []
 
-                transient_ids = []
-                rule_model = self.rule_field.relation  # esto es el modelo
-                records = self.env[rule_model].search([])
-                rule_id = self.env.context.get('rule_model_id')
+            rule_model = self.rule_field.relation  # esto es el modelo
+            records = self.env[rule_model].search([])
 
+            for record in records:
+                transient = self.env['relational.values'].create(
+                    {
+                        'name': record.name,
+                        'model_id': record.id,
+                    }
+                )
+                transient_ids.append(transient.id)
 
-                for record in records:
-                    transient = self.env['many2many.values'].create(
+                if self.env.context.get('edit', False) and record.id == self.many2many_selected_id:
+                    self.many2many_values = transient.id
+
+            return {
+                'domain': {'many2many_values': [('id', 'in', transient_ids)]},
+                'many2many_values': self.many2many_values,
+            }
+
+        elif self.fields_type in ['many2one']:
+
+            transient_ids = []
+
+            rule_model = self.rule_field.relation  # esto es el modelo
+            records = self.env[rule_model].search([])
+
+            for record in records:
+                transient = self.env['relational.values'].create(
+                    {
+                        'name': record.name,
+                        'model_id': record.id,
+                    }
+                )
+                transient_ids.append(transient.id)
+
+                if self.env.context.get('edit', False) and record.id == self.many2one_selected_id:
+                    self.many2one_values = transient.id
+
+            return {
+                'domain': {'many2one_values': [('id', 'in', transient_ids)]},
+                'many2one_values': self.many2one_values,
+            }
+
+        elif self.fields_type == 'selection':
+
+            transient_ids = []
+
+            if not self.rule_field.related:
+                selection_value = self.env[
+                    self.rules_generator_id.rule_model.model
+                ]._fields[self.rule_field.name].selection
+
+                for value in selection_value:
+                    key_id = value[0]
+                    name = value[1]
+
+                    transient = self.env['selection.values'].create(
                         {
-                            'name': record.name,
-                            'model_id': record.id,
+                            'name': name,
+                            'key_id': key_id,
                         }
                     )
                     transient_ids.append(transient.id)
 
-                return {'domain': {'many2many_values': [('id', 'in', transient_ids)]}}
+                    if self.env.context.get('edit', False) and key_id == self.selection_selected_id:
+                        self.selection_values = transient.id
 
-            elif self.fields_type == 'selection':
+            else:
+                related = self.rule_field.related.split('.')
+                model_related_name = related[0]
+                field_related_name = related[1]
 
-                transient_ids = []
+                rule_model_name = self.rules_generator_id.rule_model.model
 
-                if not self.rule_field.related:
-                    selection_value = self.env[
-                        self.rules_generator_id.rule_model.model
-                    ]._fields[self.rule_field.name].selection
+                model_related = self.env[rule_model_name]._fields[model_related_name]
 
-                    for value in selection_value:
-                        key_id = value[0]
-                        name = value[1]
+                selection_values = self.env[
+                    model_related.comodel_name
+                ]._fields[field_related_name].selection
 
-                        transient = self.env['selection.values'].create(
-                            {
-                                'name': name,
-                                'key_id': key_id,
-                            }
-                        )
-                        transient_ids.append(transient.id)
+                for value in selection_values:
+                    key_id = value[0]
+                    name = value[1]
 
-                else:
-                    related = self.rule_field.related.split('.')
-                    model_related_name = related[0]
-                    field_related_name = related[1]
+                    transient = self.env['selection.values'].create(
+                        {
+                            'name': name,
+                            'key_id': key_id,
+                        }
+                    )
+                    transient_ids.append(transient.id)
 
-                    rule_model_name = self.rules_generator_id.rule_model.model
+                    if self.env.context.get('edit', False) and key_id == self.selection_selected_id:
+                        self.selection_values = transient.id
 
-                    model_related = self.env[rule_model_name]._fields[model_related_name]
-
-                    selection_values = self.env[
-                        model_related.comodel_name
-                    ]._fields[field_related_name].selection
-
-                    for value in selection_values:
-                        key_id = value[0]
-                        name = value[1]
-
-                        transient = self.env['selection.values'].create(
-                            {
-                                'name': name,
-                                'key_id': key_id,
-                            }
-                        )
-                        transient_ids.append(transient.id)
-
-                    # if not self.selection_values:
-                    #     self.selection_values = [(6, 0, transient_ids)]
-
-                return {'domain': {'selection_values': [('id', 'in', transient_ids)]}}
+            return {'domain': {'selection_values': [('id', 'in', transient_ids)]}}
 
     @api.multi
     def create_rule(self):
-
         rule = {
             'generator_id': self.rules_generator_id.id,
             'rule_model': self.rules_generator_id.rule_model.id,
@@ -107,7 +154,9 @@ class ruleWizard(models.TransientModel):
             rule['shown_value'] = self.date_value
 
         elif fields_type == 'datetime':
-            rule['datetime'] = self.date_time_value
+
+
+            rule['date_time_value'] = self.date_time_value
             rule['shown_value'] = self.date_time_value
 
         elif fields_type == 'integer':
@@ -128,36 +177,15 @@ class ruleWizard(models.TransientModel):
 
         elif fields_type in ['many2many']:
 
-            ######################## Debug ############################################################
-            import sys
-            sys.path.append("/usr/lib/python2.7/debug/pydevd-pycharm.egg")
-            import pydevd_pycharm
-            pydevd_pycharm.settrace('10.0.75.1', port=4020, stdoutToServer=True, stderrToServer=True, )
-            ######################## Debug ############################################################
+            rule['many2many_selected_id'] = self.many2many_values.model_id
+            rule['shown_value'] = self.many2many_values.name
 
-            ids_to_rel = self.many2many_values.ids
-            rule['many2many_values'] = [(6, 0, ids_to_rel)]
+        elif fields_type in ['many2one']:
+            rule['many2one_selected_id'] = self.many2one_values.model_id
+            rule['shown_value'] = self.many2one_values.name
 
-            many2one_values = self.env['many2many.values'].search([('rule_id', '=', self.id)]).ids
-
-            name = []
-
-            for value in self.many2many_values:
-                name.append(value.name)
-
-            rule['shown_value'] = "".join(name)
-
-
-        elif fields_type in ['selection', 'many2one']:
-
-            ######################## Debug ############################################################
-            import sys
-            sys.path.append("/usr/lib/python2.7/debug/pydevd-pycharm.egg")
-            import pydevd_pycharm
-            pydevd_pycharm.settrace('10.0.75.1', port=4020, stdoutToServer=True, stderrToServer=True, )
-            ######################## Debug ############################################################
-
-            rule['selection_values'] = self.selection_values.id
+        elif fields_type in ['selection']:
+            rule['selection_values'] = self.selection_values.key_id
             rule['shown_value'] = self.selection_values.name
 
         else:

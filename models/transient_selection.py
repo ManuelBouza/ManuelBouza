@@ -4,7 +4,7 @@ from openerp import models, fields, api
 
 class RelationalValues(models.Model):
     _name = 'relational.values'
-    _description = 'Relational Values'
+    _description = 'Many2many and Many2one Values'
 
     name = fields.Char(
         string='Nombre',

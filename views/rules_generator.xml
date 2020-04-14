@@ -37,6 +37,7 @@
                                         <field name="rule_field" readonly="1"/>
                                         <field name="logical_operator" readonly="1"/>
                                         <field name="shown_value" readonly="1"/>
+                                        <field name="fields_type" readonly="1"/>
 
                                         <button name="edit"
                                                 string="Editar"
